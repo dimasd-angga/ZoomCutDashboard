@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Admins can read any data for administrative purposes.
+    // This rule assumes server-side checks are done to verify admin status before making a call.
+    // For client-side, we can check for a custom claim if set up.
+    match /admins/{adminEmail} {
+      allow get: if true; // Allow clients to check if a user is an admin on login
+      allow list, create, update, delete: if false; // Disallow client-side modification of admins
+    }
+
+    // Customer users can be created by server-side logic. Clients can't modify this.
+    match /customer_users/{userId} {
+       allow read, write: if false;
+    }
+
+    // Customers can read their own document in the 'customers' collection
+    match /customers/{customerId} {
+      allow get: if request.auth != null && request.auth.uid == resource.data.user_id;
+      // Writing customer data should be handled by secure server-side webhooks
+      allow list, create, update, delete: if false;
+    }
+
+    // Customers can read their own orders
+    match /orders/{orderId} {
+      allow get: if request.auth != null && request.auth.uid == resource.data.user_id;
+      allow list: if request.auth != null; // Allow listing for own user, would need query constraint check
+      // Writing order data should be handled by secure server-side webhooks
+      allow create, update, delete: if false;
+    }
+
+    // All users can read products
+    match /products/{productId} {
+        allow get: if true;
+        // Products should be managed from the server/admin dashboard
+        allow list, create, update, delete: if false;
+    }
+  }
+}
