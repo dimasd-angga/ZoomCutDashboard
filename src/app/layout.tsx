@@ -11,6 +11,11 @@ import { SessionErrorHandler } from '@/components/SessionErrorHandler';
 export const metadata: Metadata = {
   title: 'ZoomCut',
   description: 'Manage your ZoomCut subscriptions.',
+  icons: {
+    icon: '/icon.ico',
+    shortcut: '/icon.ico',
+    apple: '/icon.ico',
+  },
 };
 
 export default function RootLayout({
