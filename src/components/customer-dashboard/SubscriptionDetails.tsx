@@ -122,7 +122,10 @@ export function SubscriptionDetails({ subscription, customer }: { subscription?:
   }
 
   const daysLeft = trial_ends_at && isTrial ? differenceInDays(new Date(trial_ends_at), new Date()) : 0;
-  const isRealSubscription = urls.customer_portal && urls.customer_portal !== '#';
+  const isRealSubscription = urls?.customer_portal && urls.customer_portal !== '#';
+  // Show manage link for all subscriptions
+  const hasManageLink = isSubscriptionActive;
+  const manageUrl = urls?.customer_portal && urls.customer_portal !== '#' ? urls.customer_portal : `https://app.lemonsqueezy.com/my-orders`;
 
   const getDateCard = () => {
     if (isTrial && !isTrialExpired && trial_ends_at) {
@@ -176,9 +179,9 @@ export function SubscriptionDetails({ subscription, customer }: { subscription?:
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    {isRealSubscription && (
+                    {hasManageLink && (
                          <DropdownMenuItem asChild>
-                             <a href={urls.customer_portal} target="_blank" rel="noopener noreferrer">
+                             <a href={manageUrl} target="_blank" rel="noopener noreferrer">
                                 <Settings className="mr-2 h-4 w-4" /> {t('manage_subscription')} <ExternalLink className="ml-auto h-4 w-4 text-muted-foreground" />
                             </a>
                         </DropdownMenuItem>
