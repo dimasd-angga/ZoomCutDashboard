@@ -4,23 +4,13 @@ import type { Subscriber, Subscription, SystemUpdate } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Calendar, Zap, Wallet, XCircle, Loader2, Settings, ExternalLink, Download, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Crown, Calendar, Zap, Wallet, XCircle, Settings, ExternalLink, Download, CheckCircle } from 'lucide-react';
 import { differenceInDays, format, isBefore } from 'date-fns';
 import { ChangePlanDialog } from './ChangePlanDialog';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '../AppContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { useLanguage } from '../LanguageProvider';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 function InfoCard({ icon, title, value }: { icon: React.ReactNode; title: string; value: string; }) {
@@ -43,8 +33,6 @@ const formatStatus = (status: string) => {
 
 export function SubscriptionDetails({ subscription, customer }: { subscription?: Subscription, customer: Subscriber }) {
   const [isChangePlanOpen, setChangePlanOpen] = React.useState(false);
-  const [isCancelDialogOpen, setCancelDialogOpen] = React.useState(false);
-  const [isCancelling, setIsCancelling] = React.useState(false);
   const { systemUpdates, fetchData } = useAppContext();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -106,38 +94,6 @@ export function SubscriptionDetails({ subscription, customer }: { subscription?:
   
   const { status, product_name, variant_name, trial_ends_at, renews_at, ends_at, urls } = subscription;
   const statusFormatted = subscription.status_formatted || formatStatus(status);
-
-  const handleCancelSubscription = async () => {
-    if (!subscription?.id) return;
-
-    setIsCancelling(true);
-    try {
-      const response = await fetch(`/api/subscriptions/${subscription.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to cancel subscription');
-      }
-
-      toast({
-        title: t('subscription_cancelled_title') || 'Subscription Cancelled',
-        description: t('subscription_cancelled_desc') || 'Your subscription has been cancelled successfully.',
-      });
-
-      // Refresh data to update UI
-      await fetchData();
-      setCancelDialogOpen(false);
-    } catch (error: any) {
-      toast({
-        title: t('error') || 'Error',
-        description: error.message || t('subscription_cancel_error') || 'Failed to cancel subscription. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsCancelling(false);
-    }
-  };
 
   const getPlanDetails = () => {
     if (isTrial) {
@@ -228,21 +184,15 @@ export function SubscriptionDetails({ subscription, customer }: { subscription?:
                         </DropdownMenuItem>
                     )}
                     {latestAppUpdate && isSubscriptionActive && (
-                        <DropdownMenuItem asChild>
-                            <a href={latestAppUpdate.link} target="_blank" rel="noopener noreferrer">
-                                <Download className="mr-2 h-4 w-4" /> {t('download_latest_update')}
-                            </a>
-                        </DropdownMenuItem>
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <a href={latestAppUpdate.link} target="_blank" rel="noopener noreferrer">
+                                    <Download className="mr-2 h-4 w-4" /> {t('download_latest_update')}
+                                </a>
+                            </DropdownMenuItem>
+                        </>
                     )}
-                    {(isRealSubscription || (latestAppUpdate && isSubscriptionActive)) && (
-                        <DropdownMenuSeparator />
-                    )}
-                    <DropdownMenuItem
-                        onClick={() => setCancelDialogOpen(true)}
-                        className="text-destructive focus:text-destructive"
-                    >
-                        <XCircle className="mr-2 h-4 w-4" /> {t('cancel_subscription')}
-                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </CardFooter>
@@ -253,38 +203,6 @@ export function SubscriptionDetails({ subscription, customer }: { subscription?:
             customer={customer}
             currentSubscription={subscription}
         />
-        <AlertDialog open={isCancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
-                        {t('cancel_subscription')}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {t('cancel_subscription_warning')}
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isCancelling}>
-                        {t('cancel_button') || 'Cancel'}
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={handleCancelSubscription}
-                        disabled={isCancelling}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                        {isCancelling ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t('cancelling')}
-                            </>
-                        ) : (
-                            t('yes_cancel')
-                        )}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
     </>
   );
 }
